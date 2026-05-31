@@ -1,24 +1,29 @@
-package com.tracker.model;
+package com.example.application_tracker.application;
+
+import java.time.LocalDate;
 
 public class Application {
     private String company;
     private String address;
     private String position;
-    private String date;
+    private LocalDate date;
     private posStates state;
-    private String contact;
+    private LocalDate interviewDate;
+    private Contact contact;
 
     public Application (String comp,
                         String add,
                         String pos,
-                        String d,
+                        LocalDate d,
                         posStates stat,
-                        String cont) {
+                        LocalDate inDate,
+                        Contact cont) {
         this.company = comp;
         this.address = add;
         this.position = pos;
         this.date = d;
         this.state = stat;
+        this.interviewDate = inDate;
         this.contact = cont;
     }
 
@@ -34,15 +39,19 @@ public class Application {
         return this.position;
     }
 
-    public String getDate() {
+    public LocalDate getDate() {
         return this.date;
     }
 
-    public posStates getStatus() {
+    public posStates getState() {
         return this.state;
     }
 
-    public String getContact() {
+    public LocalDate getInterviewDate() {
+        return this.interviewDate;
+    }
+
+    public Contact getContact() {
         return this.contact;
     }
 
@@ -53,18 +62,56 @@ public class Application {
         GHOSTED
     }
 
+    public void setCompany(String comp) {
+        this.company = comp;
+    }
+
+    public void setAddress(String addr) {
+        this.address = addr;
+    }
+
+    public void setPosition(String pos) {
+        this.position = pos;
+    }
+
+    public void setDate(LocalDate d) {
+        this.date = d;
+    }
+
     public void setState(posStates stat) {
         this.state = stat;
     }
 
+    public void setInterviewDate(LocalDate inDate) {
+        this.interviewDate = inDate;
+    }
+
+    public void setContact(Contact con) {
+        this.contact = con;
+    }
+
+
+
     @Override
     public String toString() {
-        return String.format("\n%s: \n| address: %s |\n| position: %s |\n| date: %s |\n| state: %s |\n| contact: %s |",
-                this.company,
-                this.address,
-                this.position,
-                this.date,
-                this.state,
-                this.contact);
+
+        String base = String.format(
+                "\n%s: \n| address: %s |\n| position: %s |\n| date: %s |\n",
+                company,
+                address,
+                position,
+                date
+        );
+
+        base += "| state: " + state + " |";
+        if (state == posStates.INTERVIEW) {
+            base += " date: " + interviewDate + " |";
+        }
+
+        if (contact != null && contact.getName() != null && !contact.getName().isBlank()) {
+            base += "\n| contact: " + contact + " |";
+        }
+
+        return base;
     }
 }

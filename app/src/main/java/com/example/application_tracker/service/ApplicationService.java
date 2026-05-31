@@ -1,16 +1,20 @@
-package com.tracker.service;
+package com.example.application_tracker.service;
 
-import com.tracker.model.Application;
-import com.tracker.repository.FileStorage;
+import com.example.application_tracker.application.Application;
+import com.example.application_tracker.repository.FileStorage;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import android.content.Context;
 
 public class ApplicationService {
     private final List<Application> applications;
-    private final FileStorage storage = new FileStorage();
+    private final FileStorage storage;
 
-    public ApplicationService() {
+    public ApplicationService(Context context) {
+        this.storage = new FileStorage(context);
         this.applications = storage.load();
     }
     public void addApplication(Application app) {
@@ -33,11 +37,31 @@ public class ApplicationService {
         List<Application> filtered = new ArrayList<>();
 
         for (Application app : applications) {
-            if (app.getStatus() == (state)) {
+            if (app.getState() == (state)) {
                 filtered.add(app);
             }
         }
         return filtered;
+    }
+
+    public void updateGhostedApplications() {
+
+        for (Application app : applications) {
+
+            if (app.getState() == Application.posStates.PENDING) {
+
+                if (app.getDate().plusWeeks(8).isBefore(LocalDate.now())) {
+
+                    app.setState(Application.posStates.GHOSTED);
+                }
+            }
+        }
+    }
+
+    public void sortByDate() {
+        applications.sort(
+                Comparator.comparing(Application::getDate).reversed()
+        );
     }
 
     public void saveAll() {
