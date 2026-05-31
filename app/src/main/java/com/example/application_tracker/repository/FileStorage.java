@@ -3,6 +3,7 @@ package com.example.application_tracker.repository;
 import android.content.Context;
 
 import com.example.application_tracker.application.Application;
+import com.example.application_tracker.application.Contact;
 
 import java.io.*;
 import java.time.LocalDate;
@@ -29,12 +30,19 @@ public class FileStorage {
 
             for (Application app : applications) {
 
+                String name = app.getContact() != null ? app.getContact().getName() : "";
+                String mail = app.getContact() != null ? app.getContact().getMail() : "";
+                String phone = app.getContact() != null ? app.getContact().getPhone() : "";
+
                 writer.write(
                         app.getCompany() + ";" +
                                 app.getAddress() + ";" +
                                 app.getPosition() + ";" +
                                 app.getDate().toString() + ";" +
-                                app.getState()
+                                app.getState() + ";" +
+                                name + ";" +
+                                mail + ";" +
+                                phone
                 );
 
                 writer.newLine();
@@ -78,6 +86,16 @@ public class FileStorage {
                         state = Application.posStates.PENDING;
                     }
 
+                    String name = parts[5];
+                    String mail = parts[6];
+                    String phone = parts[7];
+
+                    Contact contact = null;
+
+                    if (!name.isEmpty() || !mail.isEmpty() || phone.isEmpty()) {
+                        contact = new Contact(name, mail, phone);
+                    }
+
                     Application app = new Application(
                             parts[0],
                             parts[1],
@@ -85,7 +103,7 @@ public class FileStorage {
                             date,
                             state,
                             null,
-                            null
+                            contact
                     );
 
                     applications.add(app);

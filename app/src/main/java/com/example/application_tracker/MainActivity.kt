@@ -4,19 +4,24 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.unit.dp
 import com.example.application_tracker.application.Application
 import com.example.application_tracker.application.Contact
@@ -38,16 +43,16 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             var company = remember { mutableStateOf("") }
-            var address = remember {mutableStateOf("")}
-            var position = remember {mutableStateOf("")}
-            var dateText = remember {mutableStateOf("")}
-            var state = remember {mutableStateOf(Application.posStates.PENDING)}
-            var contactName = remember {mutableStateOf("")}
-            var contactMail = remember {mutableStateOf("")}
-            var contactPhone = remember {mutableStateOf("")}
-            var errorMessage = remember {mutableStateOf("")}
+            var address = remember { mutableStateOf("") }
+            var position = remember { mutableStateOf("") }
+            var dateText = remember { mutableStateOf("") }
+            var state = remember { mutableStateOf(Application.posStates.PENDING) }
+            var contactName = remember { mutableStateOf("") }
+            var contactMail = remember { mutableStateOf("") }
+            var contactPhone = remember { mutableStateOf("") }
+            var errorMessage = remember { mutableStateOf("") }
             val missingFields = mutableListOf<String>()
-
+            var expandedApp = remember { mutableStateOf<Application?>(null) }
             val applications = remember {
                 mutableStateListOf<Application>().apply {
                     addAll(service.getApplications())
@@ -97,6 +102,19 @@ class MainActivity : ComponentActivity() {
                                 } catch (e: Exception) {
                                     LocalDate.now()
                                 }
+                                val contact = if (
+                                    contactName.value.isNotBlank() ||
+                                    contactMail.value.isNotBlank() ||
+                                    contactPhone.value.isNotBlank()
+                                ) {
+                                    Contact(
+                                        contactName.value,
+                                        contactMail.value,
+                                        contactPhone.value
+                                    )
+                                } else {
+                                    null
+                                }
 
                                 val app = Application(
                                     company.value,
@@ -105,7 +123,7 @@ class MainActivity : ComponentActivity() {
                                     date,
                                     Application.posStates.PENDING,
                                     null,
-                                    null,
+                                    contact,
                                 )
 
                                 service.addApplication(app)
@@ -129,40 +147,40 @@ class MainActivity : ComponentActivity() {
                         Text("* required field")
                         TextField(
                             value = company.value,
-                            onValueChange = {company.value = it},
-                            label = {Text("Company*")}
+                            onValueChange = { company.value = it },
+                            label = { Text("Company*") }
                         )
 
                         TextField(
                             value = address.value,
-                            onValueChange = {address.value = it},
-                            label = {Text("address*")}
+                            onValueChange = { address.value = it },
+                            label = { Text("address*") }
                         )
 
                         TextField(
                             value = position.value,
-                            onValueChange = {position.value = it},
-                            label = {Text("position*")}
+                            onValueChange = { position.value = it },
+                            label = { Text("position*") }
                         )
                         TextField(
                             value = dateText.value,
-                            onValueChange = {dateText.value = it},
-                            label = {Text("date(YYYY-MM-DD)*")}
+                            onValueChange = { dateText.value = it },
+                            label = { Text("date(YYYY-MM-DD)*") }
                         )
                         TextField(
                             value = contactName.value,
-                            onValueChange = {contactName.value = it},
-                            label = {Text("contactName")}
+                            onValueChange = { contactName.value = it },
+                            label = { Text("contactName") }
                         )
                         TextField(
                             value = contactMail.value,
-                            onValueChange = {contactMail.value = it},
-                            label = {Text("contactMail")}
+                            onValueChange = { contactMail.value = it },
+                            label = { Text("contactMail") }
                         )
                         TextField(
                             value = contactPhone.value,
-                            onValueChange = {contactPhone.value = it},
-                            label = {Text("contactPhone")}
+                            onValueChange = { contactPhone.value = it },
+                            label = { Text("contactPhone") }
                         )
                     }
                     LazyColumn(
@@ -172,15 +190,44 @@ class MainActivity : ComponentActivity() {
                     ) {
 
                         items(applications) { app ->
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable() {
+                                        expandedApp.value =
+                                            if (expandedApp.value == app) null else app
+                                    }
+                                    .padding(8.dp)
+                            ) {
+                                Row {
+                                    Text(app.company, modifier = Modifier.weight(1f))
+                                    Text(app.date.toString(), modifier = Modifier.weight(1f))
+                                    Text(app.state.toString(), modifier = Modifier.weight(1f))
+                                }
+                            }
 
-                            Text(app.getCompany())
+                            if (expandedApp.value == app) {
+
+                                Column(
+                                    modifier = Modifier.padding(top = 8.dp)
+                                ) {
+                                    Text("address: ${app.address}")
+                                    Text("position: ${app.position}")
+
+                                    app.contact?.let { contact ->
+                                        Text("contact: ${contact.name}")
+                                        Text("mail: ${contact.mail}")
+                                        Text("phone: ${contact.phone}")
+                                    }
+                                }
+                            }
+                            if (errorMessage.value.isNotEmpty()) {
+                                Text(
+                                    text = errorMessage.value,
+                                    color = androidx.compose.ui.graphics.Color.Red
+                                )
+                            }
                         }
-                    }
-                    if (errorMessage.value.isNotEmpty()) {
-                        Text(
-                            text = errorMessage.value,
-                            color = androidx.compose.ui.graphics.Color.Red
-                        )
                     }
                 }
             }
