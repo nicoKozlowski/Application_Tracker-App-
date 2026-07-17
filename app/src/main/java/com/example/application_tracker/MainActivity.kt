@@ -198,7 +198,7 @@ class MainActivity : ComponentActivity() {
                                 verticalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
                                 Text(
-                                    text = "* required field",
+                                    text = "*required field",
                                     color = Color.Red,
                                     fontWeight = FontWeight.Bold
                                 )
