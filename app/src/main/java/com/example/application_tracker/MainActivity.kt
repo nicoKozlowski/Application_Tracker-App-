@@ -6,7 +6,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -16,8 +16,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -29,7 +32,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withStyle
@@ -60,12 +62,13 @@ class MainActivity : ComponentActivity() {
             val missingFields = remember { mutableListOf<String>() }
             val expandedApp = remember { mutableStateOf<Application?>(null) }
             val showForm = remember { mutableStateOf(false) }
-
+            val expandedMenu = remember { mutableStateOf<Application?>(null) }
             val applications = remember {
                 mutableStateListOf<Application>().apply {
-                    addAll(service.getApplications())
+                    addAll(service.applications)
                 }
             }
+            val showDeleteDialog = remember { mutableStateOf(false) }
 
 
 
@@ -83,7 +86,7 @@ class MainActivity : ComponentActivity() {
                             if (errorMessage.value.isNotBlank() && showForm.value) {
                                 Text(
                                     text = errorMessage.value,
-                                    color = androidx.compose.ui.graphics.Color.Red,
+                                    color = Color.Red,
                                     fontWeight = FontWeight.Bold
                                 )
                             }
@@ -148,7 +151,7 @@ class MainActivity : ComponentActivity() {
                                             service.saveAll()
 
                                             applications.clear()
-                                            applications.addAll(service.getApplications())
+                                            applications.addAll(service.applications)
 
                                             company.value = ""
                                             address.value = ""
@@ -294,10 +297,16 @@ class MainActivity : ComponentActivity() {
                                         modifier = Modifier
                                             .fillMaxWidth()
                                             .padding(vertical = 1.dp)
-                                            .clickable() {
-                                                expandedApp.value =
-                                                    if (expandedApp.value == app) null else app
-                                            }
+                                            .combinedClickable(
+                                                onClick = {
+                                                    expandedApp.value =
+                                                        if (expandedApp.value == app) null else app
+                                                },
+
+                                                onLongClick = {
+                                                    expandedMenu.value = app
+                                                }
+                                            )
                                             .border(
                                                 width = 1.dp,
                                                 color = Color.Black,
@@ -336,6 +345,75 @@ class MainActivity : ComponentActivity() {
                                                     else -> Color.Black
                                                 },
                                                 fontWeight = FontWeight.Bold
+                                            )
+                                        }
+
+                                        DropdownMenu(
+                                            expanded = expandedMenu.value == app,
+                                            onDismissRequest = {
+                                                expandedMenu.value = null
+                                            }
+                                        ) {
+                                            DropdownMenuItem(
+                                                text = { Text("Edit") },
+                                                onClick = {
+                                                    expandedMenu.value = null
+                                                    // TODO: Edit Menu
+                                                }
+                                            )
+                                            DropdownMenuItem(
+                                                text = {
+                                                    Text(
+                                                        "Delete",
+                                                        color = Color.Red
+                                                    )
+                                                },
+                                                onClick = {
+                                                    expandedMenu.value = null
+                                                    showDeleteDialog.value = true
+                                                }
+                                            )
+                                        }
+                                        if (showDeleteDialog.value) {
+                                            AlertDialog(
+                                                onDismissRequest = {
+
+                                                    showDeleteDialog.value = false
+                                                },
+                                                title = {
+                                                    Text(text = "delete application")
+                                                },
+                                                text = {
+                                                    Text(text = "are you sure you want to delete '${app.company}'?")
+                                                },
+                                                confirmButton = {
+                                                    Button(
+                                                        onClick = {
+                                                            showDeleteDialog.value = false
+
+
+                                                            service.deleteApplication(app)
+                                                            service.saveAll()
+
+                                                            applications.clear()
+                                                            applications.addAll(service.applications)
+                                                        },
+                                                        colors = ButtonDefaults.buttonColors(
+                                                            containerColor = Color.Red
+                                                        )
+                                                    ) {
+                                                        Text("Delete")
+                                                    }
+                                                },
+                                                dismissButton = {
+                                                    Button(
+                                                        onClick = {
+                                                            showDeleteDialog.value = false
+                                                        }
+                                                    ) {
+                                                        Text("Cancel")
+                                                    }
+                                                }
                                             )
                                         }
                                     }

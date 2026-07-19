@@ -1,8 +1,7 @@
 1. filter button on upper mainscreen
     1.1 possible filter options:
         a) State
-        b) Date
-        c) Company
+        b) Company
 2. search button on upper mainscreen (search by company)
 3. option menu by holding on application
     3.1 possible options
