@@ -8,20 +8,28 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -42,13 +50,20 @@ import com.example.application_tracker.application.Contact
 import com.example.application_tracker.service.ApplicationService
 import com.example.application_tracker.ui.theme.Application_TrackerTheme
 import java.time.LocalDate
+import java.time.LocalTime
 
 class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val service = ApplicationService(this)
+
+        service.updateGhostedApplications()
+        service.saveAll()
+
         enableEdgeToEdge()
+
+
 
         setContent {
             val company = remember { mutableStateOf("") }
@@ -56,6 +71,8 @@ class MainActivity : ComponentActivity() {
             val position = remember { mutableStateOf("") }
             val dateText = remember { mutableStateOf("") }
             val state = remember { mutableStateOf(Application.posStates.PENDING) }
+            val interviewDate = remember { mutableStateOf("") }
+            val interviewTime = remember { mutableStateOf("") }
             val contactName = remember { mutableStateOf("") }
             val contactMail = remember { mutableStateOf("") }
             val contactPhone = remember { mutableStateOf("") }
@@ -71,7 +88,7 @@ class MainActivity : ComponentActivity() {
             }
             val showDeleteDialog = remember { mutableStateOf(false) }
             val editingApp = remember { mutableStateOf<Application?>(null) }
-
+            val isStatusMenuExpanded = remember { mutableStateOf(false) }
 
             Application_TrackerTheme {
 
@@ -84,31 +101,34 @@ class MainActivity : ComponentActivity() {
                                 .padding(16.dp)
                         ) {
 
-                            if (errorMessage.value.isNotBlank() && showAddForm.value) {
-                                Text(
-                                    text = errorMessage.value,
-                                    color = Color.Red,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.spacedBy(12.dp)
                             ) {
-                                if (!showAddForm.value) {
+                                if (!showAddForm.value && editingApp.value == null) {
                                     Button(
-                                        modifier = Modifier.weight(1f),
-                                        onClick = { showAddForm.value = true }
-                                    ) {
+                                        modifier = Modifier.weight(1f), onClick = {
+                                            company.value = ""
+                                            address.value = ""
+                                            position.value = ""
+                                            dateText.value = ""
+                                            contactName.value = ""
+                                            contactMail.value = ""
+                                            contactPhone.value = ""
+                                            interviewDate.value = ""
+                                            interviewTime.value = ""
+
+                                            errorMessage.value = ""
+                                            showAddForm.value = true
+                                        }) {
                                         Text("New Application")
                                     }
                                 }
 
                                 if (showAddForm.value) {
+
                                     Button(
-                                        modifier = Modifier.weight(1f),
-                                        onClick = {
+                                        modifier = Modifier.weight(1f), onClick = {
                                             missingFields.clear()
                                             if (company.value.isBlank()) missingFields.add("company")
                                             if (address.value.isBlank()) missingFields.add("address")
@@ -145,6 +165,7 @@ class MainActivity : ComponentActivity() {
                                                 date,
                                                 Application.posStates.PENDING,
                                                 null,
+                                                null,
                                                 contact
                                             )
 
@@ -162,8 +183,7 @@ class MainActivity : ComponentActivity() {
                                         },
 
                                         colors = ButtonDefaults.buttonColors(
-                                            containerColor = Color.Green,
-                                            contentColor = Color.White
+                                            containerColor = Color.Green, contentColor = Color.White
                                         )
                                     ) {
                                         Text("Add")
@@ -173,8 +193,7 @@ class MainActivity : ComponentActivity() {
                                         modifier = Modifier.weight(1f),
                                         onClick = { showAddForm.value = false },
                                         colors = ButtonDefaults.buttonColors(
-                                            containerColor = Color.Red,
-                                            contentColor = Color.White
+                                            containerColor = Color.Red, contentColor = Color.White
                                         )
 
                                     ) {
@@ -183,8 +202,7 @@ class MainActivity : ComponentActivity() {
                                 }
                             }
                         }
-                    }
-                ) { innerPadding ->
+                    }) { innerPadding ->
 
 
                     Column(
@@ -198,7 +216,8 @@ class MainActivity : ComponentActivity() {
                             Column(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(vertical = 16.dp),
+                                    .padding(vertical = 16.dp)
+                                    .verticalScroll(rememberScrollState()),
                                 verticalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
                                 Text(
@@ -208,8 +227,7 @@ class MainActivity : ComponentActivity() {
                                 )
 
                                 Text(
-                                    text = "*company:",
-                                    fontWeight = FontWeight.Bold
+                                    text = "*company:", fontWeight = FontWeight.Bold
                                 )
 
                                 TextField(
@@ -219,8 +237,7 @@ class MainActivity : ComponentActivity() {
                                     label = { Text("company") })
 
                                 Text(
-                                    text = "*address:",
-                                    fontWeight = FontWeight.Bold
+                                    text = "*address:", fontWeight = FontWeight.Bold
                                 )
 
                                 TextField(
@@ -230,8 +247,7 @@ class MainActivity : ComponentActivity() {
                                     label = { Text("address") })
 
                                 Text(
-                                    text = "*position:",
-                                    fontWeight = FontWeight.Bold
+                                    text = "*position:", fontWeight = FontWeight.Bold
                                 )
 
                                 TextField(
@@ -241,8 +257,7 @@ class MainActivity : ComponentActivity() {
                                     label = { Text("position") })
 
                                 Text(
-                                    text = "*date:",
-                                    fontWeight = FontWeight.Bold
+                                    text = "*date:", fontWeight = FontWeight.Bold
                                 )
 
                                 TextField(
@@ -252,8 +267,7 @@ class MainActivity : ComponentActivity() {
                                     label = { Text("date(YYYY-MM-DD)") })
 
                                 Text(
-                                    text = "contact name:",
-                                    fontWeight = FontWeight.Bold
+                                    text = "contact name:", fontWeight = FontWeight.Bold
                                 )
 
                                 TextField(
@@ -263,8 +277,7 @@ class MainActivity : ComponentActivity() {
                                     label = { Text("contact name") })
 
                                 Text(
-                                    text = "contact mail:",
-                                    fontWeight = FontWeight.Bold
+                                    text = "contact mail:", fontWeight = FontWeight.Bold
                                 )
 
                                 TextField(
@@ -274,8 +287,7 @@ class MainActivity : ComponentActivity() {
                                     label = { Text("contact mail") })
 
                                 Text(
-                                    text = "contact phone:",
-                                    fontWeight = FontWeight.Bold
+                                    text = "contact phone:", fontWeight = FontWeight.Bold
                                 )
 
                                 TextField(
@@ -283,38 +295,73 @@ class MainActivity : ComponentActivity() {
                                     value = contactPhone.value,
                                     onValueChange = { contactPhone.value = it },
                                     label = { Text("contact phone") })
-                            }
 
+                                if (errorMessage.value.isNotBlank()) {
+                                    Text(
+                                        text = errorMessage.value,
+                                        color = Color.Red,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
                         }
                         if (editingApp.value != null) {
-                            editingApp.value?.let { currentApp ->
+
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(16.dp)
+                            ) {
+
+                                editingApp.value?.let { currentApp ->
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .background(
+                                                Color.LightGray, shape = RoundedCornerShape(8.dp)
+                                            )
+                                            .padding(12.dp)
+                                    ) {
+                                        Text(
+                                            text = "currently editing:",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = Color.DarkGray
+                                        )
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween
+                                        ) {
+                                            Text(
+                                                text = currentApp.company,
+                                                fontWeight = FontWeight.Bold,
+                                                style = MaterialTheme.typography.titleMedium
+                                            )
+                                            Text(
+                                                text = "position: " + currentApp.position,
+                                                style = MaterialTheme.typography.bodyMedium
+                                            )
+                                        }
+                                    }
+                                }
+
+                                Spacer(modifier = Modifier.height(8.dp))
+
                                 Column(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .background(Color.LightGray, shape = RoundedCornerShape(8.dp))
-                                        .padding(12.dp)
+                                        .weight(1f)
+                                        .verticalScroll(rememberScrollState()),
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
-                                    Text(
-                                        text = "Edit:",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = Color.DarkGray
-                                    )
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.SpaceBetween
-                                    ) {
+                                    if (errorMessage.value.isNotBlank() && editingApp.value != null) {
                                         Text(
-                                            text = currentApp.company,
+                                            text = errorMessage.value,
+                                            color = Color.Red,
                                             fontWeight = FontWeight.Bold,
-                                            style = MaterialTheme.typography.titleMedium
-                                        )
-                                        Text(
-                                            text = currentApp.position,
-                                            style = MaterialTheme.typography.bodyMedium
+                                            modifier = Modifier.padding(bottom = 8.dp)
                                         )
                                     }
-                                }
-                            }
+
                                     Text(
                                         text = "*required field",
                                         color = Color.Red,
@@ -342,16 +389,108 @@ class MainActivity : ComponentActivity() {
                                         onValueChange = { position.value = it },
                                         label = { Text("position") })
 
-                                    Text(text = "*date:", fontWeight = FontWeight.Bold)
-                                    TextField(
+                                    Row(
                                         modifier = Modifier.fillMaxWidth(),
-                                        value = dateText.value,
-                                        onValueChange = { dateText.value = it },
-                                        label = { Text("date(YYYY-MM-DD)") })
+                                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                    ) {
 
+                                        Column(
+                                            modifier = Modifier.weight(1f)
+                                        ) {
+                                            Text(text = "*date:", fontWeight = FontWeight.Bold)
+                                            TextField(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                value = dateText.value,
+                                                onValueChange = { dateText.value = it },
+                                                label = { Text("YYYY-MM-DD") })
+                                        }
+
+                                        Column(
+                                            modifier = Modifier.weight(1f)
+                                        ) {
+                                            Text(text = "state:", fontWeight = FontWeight.Bold)
+
+                                            Box(modifier = Modifier.fillMaxWidth()) {
+                                                OutlinedTextField(
+                                                    value = state.value.toString(),
+                                                    onValueChange = {},
+                                                    readOnly = true,
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    trailingIcon = {
+                                                        IconButton(onClick = {
+                                                            isStatusMenuExpanded.value =
+                                                                !isStatusMenuExpanded.value
+                                                        }) {
+                                                            Text(
+                                                                text = if (isStatusMenuExpanded.value) "▲" else "▼",
+                                                                fontWeight = FontWeight.Bold,
+                                                                style = MaterialTheme.typography.titleMedium
+                                                            )
+                                                        }
+                                                    },
+                                                    colors = OutlinedTextFieldDefaults.colors(
+                                                        focusedBorderColor = Color.Black,
+                                                        unfocusedBorderColor = Color.Gray
+                                                    )
+                                                )
+
+                                                DropdownMenu(
+                                                    expanded = isStatusMenuExpanded.value,
+                                                    onDismissRequest = {
+                                                        isStatusMenuExpanded.value = false
+                                                    },
+                                                    modifier = Modifier.fillMaxWidth()
+                                                ) {
+                                                    Application.posStates.entries.forEach { statusOption ->
+                                                        DropdownMenuItem(
+                                                            text = { Text(statusOption.toString()) },
+                                                            onClick = {
+                                                                state.value = statusOption
+                                                                isStatusMenuExpanded.value = false
+                                                            })
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    if (state.value == Application.posStates.INTERVIEW) {
+
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                        ) {
+                                            Column(
+                                                modifier = Modifier.weight(1f)
+                                            ) {
+                                                Text(
+                                                    text = "*interview-date:",
+                                                    fontWeight = FontWeight.Bold
+                                                )
+                                                TextField(
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    value = "",
+                                                    onValueChange = { dateText.value = it },
+                                                    label = { Text("YYYY-MM-DD") })
+                                            }
+
+                                            Column(
+                                                modifier = Modifier.weight(1f)
+                                            ) {
+                                                Text(
+                                                    text = "*interview-time:",
+                                                    fontWeight = FontWeight.Bold
+                                                )
+                                                TextField(
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    value = "",
+                                                    onValueChange = { dateText.value = it },
+                                                    label = { Text("HH:mm") })
+                                            }
+                                        }
+                                    }
                                     Text(
-                                        text = "contact name:",
-                                        fontWeight = FontWeight.Bold
+                                        text = "contact name:", fontWeight = FontWeight.Bold
                                     )
                                     TextField(
                                         modifier = Modifier.fillMaxWidth(),
@@ -360,8 +499,7 @@ class MainActivity : ComponentActivity() {
                                         label = { Text("contact name") })
 
                                     Text(
-                                        text = "contact mail:",
-                                        fontWeight = FontWeight.Bold
+                                        text = "contact mail:", fontWeight = FontWeight.Bold
                                     )
                                     TextField(
                                         modifier = Modifier.fillMaxWidth(),
@@ -370,75 +508,128 @@ class MainActivity : ComponentActivity() {
                                         label = { Text("contact mail") })
 
                                     Text(
-                                        text = "contact phone:",
-                                        fontWeight = FontWeight.Bold
+                                        text = "contact phone:", fontWeight = FontWeight.Bold
                                     )
                                     TextField(
                                         modifier = Modifier.fillMaxWidth(),
                                         value = contactPhone.value,
                                         onValueChange = { contactPhone.value = it },
                                         label = { Text("contact phone") })
+                                }
 
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                                    ) {
-                                        Button(
-                                            onClick = {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(top = 8.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                ) {
+                                    Button(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .height(52.dp), onClick = {
 
-                                                editingApp.value?.let { selectedApp ->
+                                            missingFields.clear()
 
-                                                    selectedApp.company = company.value
-                                                    selectedApp.address = address.value
-                                                    selectedApp.position = position.value
+                                            if (company.value.isBlank()) missingFields.add("company")
+                                            if (address.value.isBlank()) missingFields.add("address")
+                                            if (position.value.isBlank()) missingFields.add("position")
+                                            if (dateText.value.isBlank()) missingFields.add("date")
 
-                                                    selectedApp.date = try {
-                                                        LocalDate.parse(dateText.value)
-                                                    } catch (e: Exception) {
-                                                        selectedApp.date
-                                                    }
+                                            if (state.value == Application.posStates.INTERVIEW && interviewDate.value.isBlank()) missingFields.add(
+                                                "interview-date"
+                                            )
+                                            if (state.value == Application.posStates.INTERVIEW && interviewTime.value.isBlank()) missingFields.add(
+                                                "interview-time"
+                                            )
 
-                                                    selectedApp.contact?.let { contact ->
-                                                        contact.name = contactName.value
-                                                        contact.mail = contactMail.value
-                                                        contact.phone = contactPhone.value
-                                                    }
+                                            if (!missingFields.isEmpty()) {
+                                                errorMessage.value = "required fields empty:\n${
+                                                    missingFields.joinToString(", ")
+                                                }"
+                                                return@Button
+                                            }
+
+                                            editingApp.value?.let { selectedApp ->
+
+                                                selectedApp.company = company.value
+                                                selectedApp.address = address.value
+                                                selectedApp.position = position.value
+
+                                                selectedApp.date = try {
+                                                    LocalDate.parse(dateText.value)
+                                                } catch (e: Exception) {
+                                                    selectedApp.date
                                                 }
 
+                                                selectedApp.state = state.value
 
-                                                service.saveAll()
+                                                selectedApp.interviewDate = try {
+                                                    LocalDate.parse(interviewDate.value)
+                                                } catch (e: Exception) {
+                                                    selectedApp.interviewDate
+                                                }
 
-                                                applications.clear()
-                                                applications.addAll(service.applications)
+                                                selectedApp.interviewTime = try {
+                                                    LocalTime.parse(interviewTime.value)
+                                                } catch (e: Exception) {
+                                                    selectedApp.interviewTime
+                                                }
 
-                                                editingApp.value = null
-                                            },
-                                            colors = ButtonDefaults.buttonColors(
-                                                containerColor = Color.Green,
-                                                contentColor = Color.White
-                                            )
-                                        ) {
-                                            Text("Save")
-                                        }
+                                                selectedApp.contact?.let { contact ->
+                                                    contact.name = contactName.value
+                                                    contact.mail = contactMail.value
+                                                    contact.phone = contactPhone.value
+                                                }
+                                            }
+                                            service.saveAll()
+                                            applications.clear()
+                                            applications.addAll(service.applications)
 
-                                        Button(
-                                            onClick = { editingApp.value = null },
-                                            colors = ButtonDefaults.buttonColors(
-                                                containerColor = Color.Red,
-                                                contentColor = Color.White
-                                            )
-                                        ) {
-                                            Text("Cancel")
-                                        }
+                                            company.value = ""
+                                            address.value = ""
+                                            position.value = ""
+                                            dateText.value = ""
+                                            interviewDate.value = ""
+                                            interviewTime.value = ""
+                                            contactName.value = ""
+                                            contactMail.value = ""
+                                            contactPhone.value = ""
+                                            editingApp.value = null
+                                            errorMessage.value = ""
+                                        }, colors = ButtonDefaults.buttonColors(
+                                            containerColor = Color.Green, contentColor = Color.White
+                                        )
+                                    ) {
+                                        Text("Save", fontWeight = FontWeight.Bold)
+                                    }
 
+                                    Button(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .height(52.dp), onClick = {
+                                            editingApp.value = null
+                                            errorMessage.value = ""
+
+                                            company.value = ""
+                                            address.value = ""
+                                            position.value = ""
+                                            dateText.value = ""
+                                            contactName.value = ""
+                                            contactMail.value = ""
+                                            contactPhone.value = ""
+                                            interviewDate.value = ""
+                                            interviewTime.value = ""
+                                        }, colors = ButtonDefaults.buttonColors(
+                                            containerColor = Color.Red, contentColor = Color.White
+                                        )
+                                    ) {
+                                        Text("Cancel", fontWeight = FontWeight.Bold)
                                     }
                                 }
                             }
-                        }else if (!showAddForm.value) {
+                        } else if (!showAddForm.value) {
                             LazyColumn(
-                                modifier = Modifier
-                                    .weight(1f)
-
+                                modifier = Modifier.weight(1f)
                             ) {
 
                                 items(applications) { app ->
@@ -454,8 +645,7 @@ class MainActivity : ComponentActivity() {
 
                                                 onLongClick = {
                                                     expandedMenu.value = app
-                                                }
-                                            )
+                                                })
                                             .border(
                                                 width = 1.dp,
                                                 color = Color.Black,
@@ -481,8 +671,7 @@ class MainActivity : ComponentActivity() {
                                             )
 
                                             Text(
-                                                app.date.toString(),
-                                                modifier = Modifier.weight(1f)
+                                                app.date.toString(), modifier = Modifier.weight(1f)
                                             )
                                             Text(
                                                 app.state.toString(),
@@ -502,78 +691,63 @@ class MainActivity : ComponentActivity() {
                                             expanded = expandedMenu.value == app,
                                             onDismissRequest = {
                                                 expandedMenu.value = null
-                                            }
-                                        ) {
-                                            DropdownMenuItem(
-                                                text = { Text("Edit") },
-                                                onClick = {
-                                                    expandedMenu.value = null
+                                            }) {
+                                            DropdownMenuItem(text = { Text("Edit") }, onClick = {
+                                                expandedMenu.value = null
 
-                                                    company.value = app.company
-                                                    address.value = app.address
-                                                    position.value = app.position
-                                                    dateText.value = app.date.toString()
-                                                    contactName.value = app.contact?.name ?: ""
-                                                    contactMail.value = app.contact?.mail ?: ""
-                                                    contactPhone.value = app.contact?.phone ?: ""
+                                                company.value = app.company
+                                                address.value = app.address
+                                                position.value = app.position
+                                                dateText.value = app.date.toString()
+                                                contactName.value = app.contact?.name ?: ""
+                                                contactMail.value = app.contact?.mail ?: ""
+                                                contactPhone.value = app.contact?.phone ?: ""
 
-                                                    editingApp.value = app
-                                                }
-                                            )
-                                            DropdownMenuItem(
-                                                text = {
-                                                    Text(
-                                                        "Delete",
-                                                        color = Color.Red
-                                                    )
-                                                },
-                                                onClick = {
-                                                    expandedMenu.value = null
-                                                    showDeleteDialog.value = true
-                                                }
-                                            )
+                                                editingApp.value = app
+                                                state.value = app.state
+                                            })
+                                            DropdownMenuItem(text = {
+                                                Text(
+                                                    "Delete", color = Color.Red
+                                                )
+                                            }, onClick = {
+                                                expandedMenu.value = null
+                                                showDeleteDialog.value = true
+                                            })
                                         }
                                         if (showDeleteDialog.value) {
-                                            AlertDialog(
-                                                onDismissRequest = {
+                                            AlertDialog(onDismissRequest = {
 
-                                                    showDeleteDialog.value = false
-                                                },
-                                                title = {
-                                                    Text(text = "delete application")
-                                                },
-                                                text = {
-                                                    Text(text = "are you sure you want to delete '${app.company}'?")
-                                                },
-                                                confirmButton = {
-                                                    Button(
-                                                        onClick = {
-                                                            showDeleteDialog.value = false
+                                                showDeleteDialog.value = false
+                                            }, title = {
+                                                Text(text = "delete application")
+                                            }, text = {
+                                                Text(text = "are you sure you want to delete '${app.company}'?")
+                                            }, confirmButton = {
+                                                Button(
+                                                    onClick = {
+                                                        showDeleteDialog.value = false
 
 
-                                                            service.deleteApplication(app)
-                                                            service.saveAll()
+                                                        service.deleteApplication(app)
+                                                        service.saveAll()
 
-                                                            applications.clear()
-                                                            applications.addAll(service.applications)
-                                                        },
-                                                        colors = ButtonDefaults.buttonColors(
-                                                            containerColor = Color.Red
-                                                        )
-                                                    ) {
-                                                        Text("Delete")
-                                                    }
-                                                },
-                                                dismissButton = {
-                                                    Button(
-                                                        onClick = {
-                                                            showDeleteDialog.value = false
-                                                        }
-                                                    ) {
-                                                        Text("Cancel")
-                                                    }
+                                                        applications.clear()
+                                                        applications.addAll(service.applications)
+                                                    }, colors = ButtonDefaults.buttonColors(
+                                                        containerColor = Color.Red
+                                                    )
+                                                ) {
+                                                    Text("Delete")
                                                 }
-                                            )
+                                            }, dismissButton = {
+                                                Button(
+                                                    onClick = {
+                                                        showDeleteDialog.value = false
+                                                    }) {
+                                                    Text("Cancel")
+                                                }
+                                            })
                                         }
                                     }
 
@@ -593,8 +767,7 @@ class MainActivity : ComponentActivity() {
                                                         append("address:")
                                                     }
                                                     append(" " + app.address)
-                                                }
-                                            )
+                                                })
 
                                             Text(
                                                 text = buildAnnotatedString {
@@ -607,8 +780,7 @@ class MainActivity : ComponentActivity() {
                                                         append("position:")
                                                     }
                                                     append(" " + app.position)
-                                                }
-                                            )
+                                                })
 
                                             app.contact?.let { contact ->
                                                 Text(
@@ -622,8 +794,7 @@ class MainActivity : ComponentActivity() {
                                                             append("contact name:")
                                                         }
                                                         append(" " + contact.name)
-                                                    }
-                                                )
+                                                    })
                                                 Text(
                                                     text = buildAnnotatedString {
                                                         withStyle(
@@ -635,8 +806,7 @@ class MainActivity : ComponentActivity() {
                                                             append("contact mail:")
                                                         }
                                                         append(" " + contact.mail)
-                                                    }
-                                                )
+                                                    })
                                                 Text(
                                                     text = buildAnnotatedString {
                                                         withStyle(
@@ -648,8 +818,7 @@ class MainActivity : ComponentActivity() {
                                                             append("contact phone: ")
                                                         }
                                                         append(" " + contact.phone)
-                                                    }
-                                                )
+                                                    })
                                             }
                                         }
                                     }

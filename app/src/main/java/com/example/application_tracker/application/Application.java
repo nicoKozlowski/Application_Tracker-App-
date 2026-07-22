@@ -1,6 +1,7 @@
 package com.example.application_tracker.application;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 
 public class Application {
     private String company;
@@ -9,6 +10,7 @@ public class Application {
     private LocalDate date;
     private posStates state;
     private LocalDate interviewDate;
+    private LocalTime interviewTime;
     private Contact contact;
 
     public Application (String comp,
@@ -17,6 +19,7 @@ public class Application {
                         LocalDate d,
                         posStates stat,
                         LocalDate inDate,
+                        LocalTime inTime,
                         Contact cont) {
         this.company = comp;
         this.address = add;
@@ -24,6 +27,7 @@ public class Application {
         this.date = d;
         this.state = stat;
         this.interviewDate = inDate;
+        this.interviewTime = inTime;
         this.contact = cont;
     }
 
@@ -49,6 +53,10 @@ public class Application {
 
     public LocalDate getInterviewDate() {
         return this.interviewDate;
+    }
+
+    public LocalTime getInterviewTime() {
+        return this.interviewTime;
     }
 
     public Contact getContact() {
@@ -86,6 +94,10 @@ public class Application {
         this.interviewDate = inDate;
     }
 
+    public void setInterviewTime(LocalTime inTime) {
+        this.interviewTime = inTime;
+    }
+
     public void setContact(Contact con) {
         this.contact = con;
     }
@@ -105,7 +117,7 @@ public class Application {
 
         base += "| state: " + state + " |";
         if (state == posStates.INTERVIEW) {
-            base += " date: " + interviewDate + " |";
+            base += " date: " + interviewDate + " |\n time: " + interviewTime + " |";
         }
 
         if (contact != null && contact.getName() != null && !contact.getName().isBlank()) {

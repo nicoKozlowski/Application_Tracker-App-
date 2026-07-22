@@ -103,6 +103,7 @@ public class FileStorage {
                             date,
                             state,
                             null,
+                            null,
                             contact
                     );
 
