@@ -11,6 +11,8 @@ public class Application {
     private posStates state;
     private LocalDate interviewDate;
     private LocalTime interviewTime;
+
+    private String interviewAddress;
     private Contact contact;
 
     public Application (String comp,
@@ -20,6 +22,7 @@ public class Application {
                         posStates stat,
                         LocalDate inDate,
                         LocalTime inTime,
+                        String interviewAddress,
                         Contact cont) {
         this.company = comp;
         this.address = add;
@@ -28,6 +31,7 @@ public class Application {
         this.state = stat;
         this.interviewDate = inDate;
         this.interviewTime = inTime;
+        this.interviewAddress = interviewAddress;
         this.contact = cont;
     }
 
@@ -58,6 +62,8 @@ public class Application {
     public LocalTime getInterviewTime() {
         return this.interviewTime;
     }
+
+    public String getInterviewAddress() {return this.interviewAddress; }
 
     public Contact getContact() {
         return this.contact;
@@ -98,6 +104,8 @@ public class Application {
         this.interviewTime = inTime;
     }
 
+    public void setInterviewAddress(String inAddress) {this.interviewAddress = inAddress; }
+
     public void setContact(Contact con) {
         this.contact = con;
     }
@@ -122,6 +130,10 @@ public class Application {
 
         if (contact != null && contact.getName() != null && !contact.getName().isBlank()) {
             base += "\n| contact: " + contact + " |";
+        }
+
+        if (interviewAddress != null) {
+            base += "\n| interviewAddress: " + interviewAddress + " |";
         }
 
         return base;

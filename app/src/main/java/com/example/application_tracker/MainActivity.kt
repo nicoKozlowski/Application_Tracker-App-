@@ -73,6 +73,7 @@ class MainActivity : ComponentActivity() {
             val state = remember { mutableStateOf(Application.posStates.PENDING) }
             val interviewDate = remember { mutableStateOf("") }
             val interviewTime = remember { mutableStateOf("") }
+            val interviewAddress = remember {mutableStateOf("")}
             val contactName = remember { mutableStateOf("") }
             val contactMail = remember { mutableStateOf("") }
             val contactPhone = remember { mutableStateOf("") }
@@ -89,6 +90,8 @@ class MainActivity : ComponentActivity() {
             val showDeleteDialog = remember { mutableStateOf(false) }
             val editingApp = remember { mutableStateOf<Application?>(null) }
             val isStatusMenuExpanded = remember { mutableStateOf(false) }
+            val showInterviewDialog = remember { mutableStateOf(false) }
+            val editInterviewAddress = remember {mutableStateOf(false)}
 
             Application_TrackerTheme {
 
@@ -164,6 +167,7 @@ class MainActivity : ComponentActivity() {
                                                 position.value,
                                                 date,
                                                 Application.posStates.PENDING,
+                                                null,
                                                 null,
                                                 null,
                                                 contact
@@ -305,7 +309,7 @@ class MainActivity : ComponentActivity() {
                                 }
                             }
                         }
-                        if (editingApp.value != null) {
+                        if (editingApp.value != null) {     //editing menu
 
                             Column(
                                 modifier = Modifier
@@ -456,6 +460,8 @@ class MainActivity : ComponentActivity() {
 
                                     if (state.value == Application.posStates.INTERVIEW) {
 
+                                        showInterviewDialog.value = true
+
                                         Row(
                                             modifier = Modifier.fillMaxWidth(),
                                             horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -469,8 +475,8 @@ class MainActivity : ComponentActivity() {
                                                 )
                                                 TextField(
                                                     modifier = Modifier.fillMaxWidth(),
-                                                    value = "",
-                                                    onValueChange = { dateText.value = it },
+                                                    value = interviewDate.value,
+                                                    onValueChange = { interviewDate.value = it },
                                                     label = { Text("YYYY-MM-DD") })
                                             }
 
@@ -483,9 +489,56 @@ class MainActivity : ComponentActivity() {
                                                 )
                                                 TextField(
                                                     modifier = Modifier.fillMaxWidth(),
-                                                    value = "",
-                                                    onValueChange = { dateText.value = it },
+                                                    value = interviewTime.value,
+                                                    onValueChange = { interviewTime.value = it },
                                                     label = { Text("HH:mm") })
+                                            }
+
+                                            if (showInterviewDialog.value) {
+                                                AlertDialog(onDismissRequest = {
+
+                                                    showInterviewDialog.value = false
+                                                }, title = {
+                                                    Text(text = "interview address")
+                                                }, text = {
+                                                    Text(text = "is it the same address?")
+                                                }, confirmButton = {
+                                                    Button(
+                                                        onClick = {
+                                                            showInterviewDialog.value = false
+                                                        }, colors = ButtonDefaults.buttonColors(
+                                                            containerColor = Color.Green
+                                                        )
+                                                    ) {
+                                                        Text("Yes")
+                                                    }
+                                                }, dismissButton = {
+                                                    Button(
+                                                        onClick = {
+                                                            editInterviewAddress.value = true
+                                                        }, colors = ButtonDefaults.buttonColors(
+                                                            containerColor = Color.Red
+                                                        )) {
+                                                        Text("No")
+                                                    }
+                                                })
+                                            }
+
+                                            if (editInterviewAddress.value) {
+
+                                                TextField(
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    value = address.value,
+                                                    onValueChange = { interviewAddress.value = it },
+                                                    label = { Text("new address") }
+                                                )
+
+                                                service.saveAll()
+                                                applications.clear()
+                                                applications.addAll(service.applications)
+
+                                                editInterviewAddress.value = false
+                                                showInterviewDialog.value = false
                                             }
                                         }
                                     }
@@ -549,6 +602,8 @@ class MainActivity : ComponentActivity() {
                                                 return@Button
                                             }
 
+                                            showInterviewDialog.value = true
+
                                             editingApp.value?.let { selectedApp ->
 
                                                 selectedApp.company = company.value
@@ -581,6 +636,8 @@ class MainActivity : ComponentActivity() {
                                                     contact.phone = contactPhone.value
                                                 }
                                             }
+
+
                                             service.saveAll()
                                             applications.clear()
                                             applications.addAll(service.applications)
@@ -670,9 +727,16 @@ class MainActivity : ComponentActivity() {
                                                 fontWeight = FontWeight.Bold
                                             )
 
-                                            Text(
-                                                app.date.toString(), modifier = Modifier.weight(1f)
-                                            )
+                                            if (app.interviewDate == null) {
+                                                Text(
+                                                    app.date.toString(), modifier = Modifier.weight(1f)
+                                                )
+                                            } else {
+                                                Text(
+                                                    app.interviewDate.toString(), modifier = Modifier.weight(1f)
+                                                )
+                                            }
+
                                             Text(
                                                 app.state.toString(),
                                                 modifier = Modifier.weight(1f),

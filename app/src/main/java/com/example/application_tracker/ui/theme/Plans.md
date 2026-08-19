@@ -14,7 +14,7 @@
         a) changing to INTERVIEW needs filling out interview_date - done
         b) in case of different address for interview append interview_address (or online)
     3.2 UI changes
-        a) mainscreen date changes to interview_date
+        a) mainscreen date changes to interview_date - done
         b) in expanded view add interview_address in case it is different from location
         c) in expanded view add interview_time
         d) color upcoming interviews
