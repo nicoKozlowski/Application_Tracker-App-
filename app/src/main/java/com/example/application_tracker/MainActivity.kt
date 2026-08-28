@@ -92,6 +92,7 @@ class MainActivity : ComponentActivity() {
             val isStatusMenuExpanded = remember { mutableStateOf(false) }
             val showInterviewDialog = remember { mutableStateOf(false) }
             val editInterviewAddress = remember { mutableStateOf(false) }
+            val appToDelete = remember { mutableStateOf<Application?>(null) }
 
             Application_TrackerTheme {
 
@@ -635,7 +636,8 @@ class MainActivity : ComponentActivity() {
                                                     selectedApp.interviewTime
                                                 }
 
-                                                selectedApp.interviewAddress = interviewAddress.value
+                                                selectedApp.interviewAddress =
+                                                    interviewAddress.value
 
                                                 selectedApp.contact?.let { contact ->
                                                     contact.name = contactName.value
@@ -743,7 +745,9 @@ class MainActivity : ComponentActivity() {
                                             } else {
                                                 Text(
                                                     app.interviewDate.toString(),
-                                                    modifier = Modifier.weight(1f)
+                                                    modifier = Modifier.weight(1f),
+                                                    fontWeight = FontWeight.Bold,
+                                                    textDecoration = TextDecoration.Underline
                                                 )
                                             }
 
@@ -794,41 +798,7 @@ class MainActivity : ComponentActivity() {
                                                 )
                                             }, onClick = {
                                                 expandedMenu.value = null
-                                                showDeleteDialog.value = true
-                                            })
-                                        }
-                                        if (showDeleteDialog.value) {
-                                            AlertDialog(onDismissRequest = {
-
-                                                showDeleteDialog.value = false
-                                            }, title = {
-                                                Text(text = "delete application")
-                                            }, text = {
-                                                Text(text = "are you sure you want to delete '${app.company}'?")
-                                            }, confirmButton = {
-                                                Button(
-                                                    onClick = {
-                                                        showDeleteDialog.value = false
-
-
-                                                        service.deleteApplication(app)
-                                                        service.saveAll()
-
-                                                        applications.clear()
-                                                        applications.addAll(service.applications)
-                                                    }, colors = ButtonDefaults.buttonColors(
-                                                        containerColor = Color.Red
-                                                    )
-                                                ) {
-                                                    Text("Delete")
-                                                }
-                                            }, dismissButton = {
-                                                Button(
-                                                    onClick = {
-                                                        showDeleteDialog.value = false
-                                                    }) {
-                                                    Text("Cancel")
-                                                }
+                                                appToDelete.value = app
                                             })
                                         }
                                     }
@@ -953,12 +923,47 @@ class MainActivity : ComponentActivity() {
                                                                 append("contact phone: ")
                                                             }
                                                             append(" " + contact.phone)
-                                                        }
-                                                    )
+                                                        })
                                                 }
                                             }
                                         }
                                     }
+                                }
+                            }
+                            if (appToDelete.value != null) {
+
+                                val selectedApp = appToDelete.value
+
+                                if (selectedApp != null) {
+                                    AlertDialog(
+                                        onDismissRequest = { appToDelete.value = null },
+                                        title = { Text(text = "Delete Application") },
+                                        text = { Text(text = "Are you sure you want to delete '${selectedApp.company}'?") },
+                                        confirmButton = {
+                                            Button(
+                                                onClick = {
+
+                                                    service.deleteApplication(selectedApp)
+                                                    service.saveAll()
+
+
+                                                    applications.clear()
+                                                    applications.addAll(service.applications)
+
+                                                    appToDelete.value = null
+                                                },
+                                                colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
+                                            ) {
+                                                Text("Delete")
+                                            }
+                                        },
+                                        dismissButton = {
+                                            Button(
+                                                onClick = { appToDelete.value = null }) {
+                                                Text("Cancel")
+                                            }
+                                        }
+                                    )
                                 }
                             }
                         }
