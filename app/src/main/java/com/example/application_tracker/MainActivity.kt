@@ -73,7 +73,7 @@ class MainActivity : ComponentActivity() {
             val state = remember { mutableStateOf(Application.posStates.PENDING) }
             val interviewDate = remember { mutableStateOf("") }
             val interviewTime = remember { mutableStateOf("") }
-            val interviewAddress = remember {mutableStateOf("")}
+            val interviewAddress = remember { mutableStateOf("") }
             val contactName = remember { mutableStateOf("") }
             val contactMail = remember { mutableStateOf("") }
             val contactPhone = remember { mutableStateOf("") }
@@ -91,7 +91,7 @@ class MainActivity : ComponentActivity() {
             val editingApp = remember { mutableStateOf<Application?>(null) }
             val isStatusMenuExpanded = remember { mutableStateOf(false) }
             val showInterviewDialog = remember { mutableStateOf(false) }
-            val editInterviewAddress = remember {mutableStateOf(false)}
+            val editInterviewAddress = remember { mutableStateOf(false) }
 
             Application_TrackerTheme {
 
@@ -451,6 +451,10 @@ class MainActivity : ComponentActivity() {
                                                             onClick = {
                                                                 state.value = statusOption
                                                                 isStatusMenuExpanded.value = false
+
+                                                                if (statusOption == Application.posStates.INTERVIEW) {
+                                                                    showInterviewDialog.value = true
+                                                                }
                                                             })
                                                     }
                                                 }
@@ -459,8 +463,6 @@ class MainActivity : ComponentActivity() {
                                     }
 
                                     if (state.value == Application.posStates.INTERVIEW) {
-
-                                        showInterviewDialog.value = true
 
                                         Row(
                                             modifier = Modifier.fillMaxWidth(),
@@ -493,18 +495,32 @@ class MainActivity : ComponentActivity() {
                                                     onValueChange = { interviewTime.value = it },
                                                     label = { Text("HH:mm") })
                                             }
+                                        }
+                                        if (editInterviewAddress.value) {
+                                            Spacer(modifier = Modifier.height(8.dp))
+                                            Text(
+                                                text = "*interview-address:",
+                                                fontWeight = FontWeight.Bold
+                                            )
+                                            TextField(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                value = interviewAddress.value,
+                                                onValueChange = { interviewAddress.value = it },
+                                                label = { Text("new address") })
+                                        }
 
-                                            if (showInterviewDialog.value) {
-                                                AlertDialog(onDismissRequest = {
-
-                                                    showInterviewDialog.value = false
-                                                }, title = {
-                                                    Text(text = "interview address")
-                                                }, text = {
-                                                    Text(text = "is it the same address?")
-                                                }, confirmButton = {
+                                        if (showInterviewDialog.value) {
+                                            AlertDialog(
+                                                onDismissRequest = {
+                                                showInterviewDialog.value = false
+                                            },
+                                                title = { Text(text = "Interview Address") },
+                                                text = { Text(text = "Is it the same address?") },
+                                                confirmButton = {
                                                     Button(
                                                         onClick = {
+                                                            interviewAddress.value = address.value
+                                                            editInterviewAddress.value = false
                                                             showInterviewDialog.value = false
                                                         }, colors = ButtonDefaults.buttonColors(
                                                             containerColor = Color.Green
@@ -512,36 +528,23 @@ class MainActivity : ComponentActivity() {
                                                     ) {
                                                         Text("Yes")
                                                     }
-                                                }, dismissButton = {
+                                                },
+                                                dismissButton = {
                                                     Button(
                                                         onClick = {
+                                                            interviewAddress.value = ""
                                                             editInterviewAddress.value = true
+                                                            showInterviewDialog.value = false
                                                         }, colors = ButtonDefaults.buttonColors(
                                                             containerColor = Color.Red
-                                                        )) {
+                                                        )
+                                                    ) {
                                                         Text("No")
                                                     }
                                                 })
-                                            }
-
-                                            if (editInterviewAddress.value) {
-
-                                                TextField(
-                                                    modifier = Modifier.fillMaxWidth(),
-                                                    value = address.value,
-                                                    onValueChange = { interviewAddress.value = it },
-                                                    label = { Text("new address") }
-                                                )
-
-                                                service.saveAll()
-                                                applications.clear()
-                                                applications.addAll(service.applications)
-
-                                                editInterviewAddress.value = false
-                                                showInterviewDialog.value = false
-                                            }
                                         }
                                     }
+
                                     Text(
                                         text = "contact name:", fontWeight = FontWeight.Bold
                                     )
@@ -595,14 +598,16 @@ class MainActivity : ComponentActivity() {
                                                 "interview-time"
                                             )
 
+                                            if (state.value == Application.posStates.INTERVIEW && editInterviewAddress.value && interviewAddress.value.isBlank()) {
+                                                missingFields.add("interview address")
+                                            }
+
                                             if (!missingFields.isEmpty()) {
                                                 errorMessage.value = "required fields empty:\n${
                                                     missingFields.joinToString(", ")
                                                 }"
                                                 return@Button
                                             }
-
-                                            showInterviewDialog.value = true
 
                                             editingApp.value?.let { selectedApp ->
 
@@ -630,6 +635,8 @@ class MainActivity : ComponentActivity() {
                                                     selectedApp.interviewTime
                                                 }
 
+                                                selectedApp.interviewAddress = interviewAddress.value
+
                                                 selectedApp.contact?.let { contact ->
                                                     contact.name = contactName.value
                                                     contact.mail = contactMail.value
@@ -648,6 +655,7 @@ class MainActivity : ComponentActivity() {
                                             dateText.value = ""
                                             interviewDate.value = ""
                                             interviewTime.value = ""
+                                            interviewAddress.value = ""
                                             contactName.value = ""
                                             contactMail.value = ""
                                             contactPhone.value = ""
@@ -729,11 +737,13 @@ class MainActivity : ComponentActivity() {
 
                                             if (app.interviewDate == null) {
                                                 Text(
-                                                    app.date.toString(), modifier = Modifier.weight(1f)
+                                                    app.date.toString(),
+                                                    modifier = Modifier.weight(1f)
                                                 )
                                             } else {
                                                 Text(
-                                                    app.interviewDate.toString(), modifier = Modifier.weight(1f)
+                                                    app.interviewDate.toString(),
+                                                    modifier = Modifier.weight(1f)
                                                 )
                                             }
 
@@ -763,9 +773,17 @@ class MainActivity : ComponentActivity() {
                                                 address.value = app.address
                                                 position.value = app.position
                                                 dateText.value = app.date.toString()
+                                                interviewDate.value =
+                                                    app.interviewDate?.toString() ?: ""
+                                                interviewTime.value =
+                                                    app.interviewTime?.toString() ?: ""
+                                                interviewAddress.value = app.interviewAddress ?: ""
                                                 contactName.value = app.contact?.name ?: ""
                                                 contactMail.value = app.contact?.mail ?: ""
                                                 contactPhone.value = app.contact?.phone ?: ""
+
+                                                editInterviewAddress.value =
+                                                    !app.interviewAddress.isNullOrBlank() && app.interviewAddress != app.address
 
                                                 editingApp.value = app
                                                 state.value = app.state
@@ -846,43 +864,98 @@ class MainActivity : ComponentActivity() {
                                                     append(" " + app.position)
                                                 })
 
+                                            if (app.state == Application.posStates.INTERVIEW) {
+
+                                                Text(
+                                                    text = buildAnnotatedString {
+                                                        withStyle(
+                                                            style = SpanStyle(
+                                                                fontWeight = FontWeight.Bold,
+                                                                textDecoration = TextDecoration.Underline
+                                                            )
+                                                        ) {
+                                                            append("date added:")
+                                                        }
+                                                        append(" " + app.date)
+                                                    })
+
+                                                if (app.interviewAddress != null) {
+
+                                                    Text(
+                                                        text = buildAnnotatedString {
+                                                            withStyle(
+                                                                style = SpanStyle(
+                                                                    fontWeight = FontWeight.Bold,
+                                                                    textDecoration = TextDecoration.Underline
+                                                                )
+                                                            ) {
+                                                                append("interview-address:")
+                                                            }
+                                                            append(" " + app.interviewAddress)
+                                                        })
+                                                }
+
+                                                Text(
+                                                    text = buildAnnotatedString {
+                                                        withStyle(
+                                                            style = SpanStyle(
+                                                                fontWeight = FontWeight.Bold,
+                                                                textDecoration = TextDecoration.Underline
+                                                            )
+                                                        ) {
+                                                            append("interview-time:")
+                                                        }
+                                                        append(" " + app.interviewTime)
+                                                    })
+                                            }
+
                                             app.contact?.let { contact ->
-                                                Text(
-                                                    text = buildAnnotatedString {
-                                                        withStyle(
-                                                            style = SpanStyle(
-                                                                fontWeight = FontWeight.Bold,
-                                                                textDecoration = TextDecoration.Underline
-                                                            )
-                                                        ) {
-                                                            append("contact name:")
+
+                                                if (contact.name.isNotEmpty()) {
+                                                    Text(
+                                                        text = buildAnnotatedString {
+                                                            withStyle(
+                                                                style = SpanStyle(
+                                                                    fontWeight = FontWeight.Bold,
+                                                                    textDecoration = TextDecoration.Underline
+                                                                )
+                                                            ) {
+                                                                append("contact name:")
+                                                            }
+                                                            append(" " + contact.name)
+                                                        })
+                                                }
+
+                                                if (contact.mail.isNotEmpty()) {
+                                                    Text(
+                                                        text = buildAnnotatedString {
+                                                            withStyle(
+                                                                style = SpanStyle(
+                                                                    fontWeight = FontWeight.Bold,
+                                                                    textDecoration = TextDecoration.Underline
+                                                                )
+                                                            ) {
+                                                                append("contact mail:")
+                                                            }
+                                                            append(" " + contact.mail)
+                                                        })
+                                                }
+
+                                                if (contact.phone.isNotEmpty()) {
+                                                    Text(
+                                                        text = buildAnnotatedString {
+                                                            withStyle(
+                                                                style = SpanStyle(
+                                                                    fontWeight = FontWeight.Bold,
+                                                                    textDecoration = TextDecoration.Underline
+                                                                )
+                                                            ) {
+                                                                append("contact phone: ")
+                                                            }
+                                                            append(" " + contact.phone)
                                                         }
-                                                        append(" " + contact.name)
-                                                    })
-                                                Text(
-                                                    text = buildAnnotatedString {
-                                                        withStyle(
-                                                            style = SpanStyle(
-                                                                fontWeight = FontWeight.Bold,
-                                                                textDecoration = TextDecoration.Underline
-                                                            )
-                                                        ) {
-                                                            append("contact mail:")
-                                                        }
-                                                        append(" " + contact.mail)
-                                                    })
-                                                Text(
-                                                    text = buildAnnotatedString {
-                                                        withStyle(
-                                                            style = SpanStyle(
-                                                                fontWeight = FontWeight.Bold,
-                                                                textDecoration = TextDecoration.Underline
-                                                            )
-                                                        ) {
-                                                            append("contact phone: ")
-                                                        }
-                                                        append(" " + contact.phone)
-                                                    })
+                                                    )
+                                                }
                                             }
                                         }
                                     }

@@ -7,6 +7,7 @@ import com.example.application_tracker.application.Contact;
 
 import java.io.*;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -34,12 +35,19 @@ public class FileStorage {
                 String mail = app.getContact() != null ? app.getContact().getMail() : "";
                 String phone = app.getContact() != null ? app.getContact().getPhone() : "";
 
+                String inDate = app.getInterviewDate() != null ? app.getInterviewDate().toString() : "";
+                String inTime = app.getInterviewTime() != null ? app.getInterviewTime().toString() : "";
+                String inAddress = app.getInterviewAddress() != null ? app.getInterviewAddress() : "";
+
                 writer.write(
                         app.getCompany() + ";" +
                                 app.getAddress() + ";" +
                                 app.getPosition() + ";" +
                                 app.getDate().toString() + ";" +
                                 app.getState() + ";" +
+                                inDate + ";" +
+                                inTime + ";" +
+                                inAddress + ";" +
                                 name + ";" +
                                 mail + ";" +
                                 phone
@@ -86,14 +94,37 @@ public class FileStorage {
                         state = Application.posStates.PENDING;
                     }
 
-                    String name = parts[5];
-                    String mail = parts[6];
-                    String phone = parts[7];
+                    String name = parts[8];
+                    String mail = parts[9];
+                    String phone = parts[10];
 
                     Contact contact = null;
 
                     if (!name.isEmpty() || !mail.isEmpty() || phone.isEmpty()) {
                         contact = new Contact(name, mail, phone);
+                    }
+
+                    LocalDate interviewDate = null;
+                    if (parts.length > 5 && !parts[5].isEmpty() && !parts[5].equals("null")) {
+                        try {
+                            interviewDate = LocalDate.parse(parts[5]);
+                        } catch (Exception e) {
+                            interviewDate = null;
+                        }
+                    }
+
+                    LocalTime interviewTime = null;
+                    if (parts.length > 6 && !parts[6].isEmpty() && !parts[6].equals("null")) {
+                        try {
+                            interviewTime = LocalTime.parse(parts[6]);
+                        } catch (Exception e) {
+                            interviewTime = null;
+                        }
+                    }
+
+                    String interviewAddress = null;
+                    if (parts.length > 7 && !parts[7].isEmpty() && !parts[7].equals("null")) {
+                        interviewAddress = parts[7];
                     }
 
                     Application app = new Application(
@@ -102,9 +133,9 @@ public class FileStorage {
                             parts[2],
                             date,
                             state,
-                            null,
-                            null,
-                            null,
+                            interviewDate,
+                            interviewTime,
+                            interviewAddress,
                             contact
                     );
 
