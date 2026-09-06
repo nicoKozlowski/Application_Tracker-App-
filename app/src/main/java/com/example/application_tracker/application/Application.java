@@ -15,6 +15,8 @@ public class Application {
     private String interviewAddress;
     private Contact contact;
 
+    private String documentPath;
+
     public Application (String comp,
                         String add,
                         String pos,
@@ -23,7 +25,8 @@ public class Application {
                         LocalDate inDate,
                         LocalTime inTime,
                         String interviewAddress,
-                        Contact cont) {
+                        Contact cont,
+                        String docPath) {
         this.company = comp;
         this.address = add;
         this.position = pos;
@@ -33,6 +36,7 @@ public class Application {
         this.interviewTime = inTime;
         this.interviewAddress = interviewAddress;
         this.contact = cont;
+        this.documentPath = docPath;
     }
 
     public String getCompany() {
@@ -68,6 +72,8 @@ public class Application {
     public Contact getContact() {
         return this.contact;
     }
+
+    public String getDocumentPath() { return this.documentPath; }
 
     public enum posStates {
         PENDING,
@@ -110,7 +116,7 @@ public class Application {
         this.contact = con;
     }
 
-
+    public void setDocumentPath(String docPath) { this.documentPath = docPath; }
 
     @Override
     public String toString() {

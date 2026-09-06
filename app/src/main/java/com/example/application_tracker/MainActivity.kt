@@ -699,7 +699,23 @@ class MainActivity : ComponentActivity() {
                                 modifier = Modifier.weight(1f)
                             ) {
 
-                                items(applications) { app ->
+                                items(
+                                    applications.sortedByDescending { app ->
+
+                                        val today = LocalDate.now()
+                                        val upcoming = app.interviewDate != null &&
+                                                !app.interviewDate.isBefore(today) &&
+                                                !app.interviewDate.isAfter(today.plusWeeks(2))
+
+                                        upcoming
+                                    }
+                                ) { app ->
+
+                                    val today = LocalDate.now()
+                                    val upcoming = app.interviewDate != null &&
+                                            !app.interviewDate.isBefore(today) &&
+                                            !app.interviewDate.isAfter(today.plusWeeks(2))
+
                                     Column(
                                         modifier = Modifier
                                             .fillMaxWidth()
@@ -720,10 +736,11 @@ class MainActivity : ComponentActivity() {
                                             )
                                             .clip(RoundedCornerShape(12.dp))
                                             .background(
-                                                if (expandedApp.value == app) {
-                                                    Color.LightGray
-                                                } else {
-                                                    Color.Transparent
+
+                                                when {
+                                                    expandedApp.value  == app -> Color.LightGray
+                                                    upcoming -> Color.Yellow
+                                                    else -> Color.Transparent
                                                 }
                                             )
                                             .padding(12.dp)

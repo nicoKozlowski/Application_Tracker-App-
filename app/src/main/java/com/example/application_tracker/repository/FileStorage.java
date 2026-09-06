@@ -50,7 +50,8 @@ public class FileStorage {
                                 inAddress + ";" +
                                 name + ";" +
                                 mail + ";" +
-                                phone
+                                phone + ";" +
+                                app.getDocumentPath()
                 );
 
                 writer.newLine();
@@ -94,16 +95,6 @@ public class FileStorage {
                         state = Application.posStates.PENDING;
                     }
 
-                    String name = parts[8];
-                    String mail = parts[9];
-                    String phone = parts[10];
-
-                    Contact contact = null;
-
-                    if (!name.isEmpty() || !mail.isEmpty() || phone.isEmpty()) {
-                        contact = new Contact(name, mail, phone);
-                    }
-
                     LocalDate interviewDate = null;
                     if (parts.length > 5 && !parts[5].isEmpty() && !parts[5].equals("null")) {
                         try {
@@ -127,6 +118,16 @@ public class FileStorage {
                         interviewAddress = parts[7];
                     }
 
+                    String name = parts[8];
+                    String mail = parts[9];
+                    String phone = parts[10];
+
+                    Contact contact = null;
+
+                    if (!name.isEmpty() || !mail.isEmpty() || phone.isEmpty()) {
+                        contact = new Contact(name, mail, phone);
+                    }
+
                     Application app = new Application(
                             parts[0],
                             parts[1],
@@ -136,7 +137,8 @@ public class FileStorage {
                             interviewDate,
                             interviewTime,
                             interviewAddress,
-                            contact
+                            contact,
+                            parts[11]
                     );
 
                     applications.add(app);

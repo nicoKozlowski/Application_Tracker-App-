@@ -10,14 +10,14 @@
         c) change state by selection - done
         d) save button - done~~
 4. state = INTERVIEW
-    3.1 functionality
+    ~~3.1 functionality -done
         a) changing to INTERVIEW needs filling out interview_date - done
-        b) in case of different address for interview append interview_address (or online)
-    3.2 UI changes
+        b) in case of different address for interview append interview_address (or online) - done~~
+    ~~3.2 UI changes - DONE
         a) mainscreen date changes to interview_date - done
-        b) in expanded view add interview_address in case it is different from location
-        c) in expanded view add interview_time
-        d) color upcoming interviews
+        b) in expanded view add interview_address in case it is different from location - done
+        c) in expanded view add interview_time - done
+        d) color upcoming interviews - done~~
 5. sort button on upper mainscreen
     5.1 possible sort options:
         a) State (ascending and descending)
@@ -30,6 +30,6 @@
         a) total Applications send
         b) still open Applications
         c) upcoming interviews
-9. upcoming interviews
-    9.1 lock upcoming interviews at the beginning
+9. ~~upcoming interviews - DONE
+    9.1 lock upcoming interviews at the beginning - done~~
 10. Upload Application File per Application

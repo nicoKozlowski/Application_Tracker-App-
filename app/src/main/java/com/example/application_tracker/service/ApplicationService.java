@@ -57,13 +57,6 @@ public class ApplicationService {
             }
         }
     }
-
-    public void sortByDate() {
-        applications.sort(
-                Comparator.comparing(Application::getDate).reversed()
-        );
-    }
-
     public void saveAll() {
         storage.save(applications);
     }
