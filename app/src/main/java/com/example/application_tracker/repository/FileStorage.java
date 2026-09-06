@@ -128,6 +128,11 @@ public class FileStorage {
                         contact = new Contact(name, mail, phone);
                     }
 
+                    String documentPath = parts[11];
+                    if (documentPath == null || documentPath.trim().isEmpty() || documentPath.trim().equals("null")) {
+                        documentPath = null;
+                    }
+
                     Application app = new Application(
                             parts[0],
                             parts[1],
@@ -138,7 +143,7 @@ public class FileStorage {
                             interviewTime,
                             interviewAddress,
                             contact,
-                            parts[11]
+                            documentPath
                     );
 
                     applications.add(app);

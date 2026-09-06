@@ -51,6 +51,9 @@ import com.example.application_tracker.service.ApplicationService
 import com.example.application_tracker.ui.theme.Application_TrackerTheme
 import java.time.LocalDate
 import java.time.LocalTime
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+
 
 class MainActivity : ComponentActivity() {
 
@@ -93,6 +96,37 @@ class MainActivity : ComponentActivity() {
             val showInterviewDialog = remember { mutableStateOf(false) }
             val editInterviewAddress = remember { mutableStateOf(false) }
             val appToDelete = remember { mutableStateOf<Application?>(null) }
+
+            val context = androidx.compose.ui.platform.LocalContext.current
+
+            val filePickerLauncher = rememberLauncherForActivityResult(
+                contract = ActivityResultContracts.GetContent()
+            ) { uri: android.net.Uri? ->
+                uri?.let { safeUri ->
+
+                    try {
+                        val inputStream = context.contentResolver.openInputStream(safeUri)
+                        val fileName = "doc_${expandedApp.value?.company?.replace(" ", "_")}_${System.currentTimeMillis()}.pdf"
+                        val outputStream = context.openFileOutput(fileName, MODE_PRIVATE)
+
+                        inputStream?.use { input ->
+                            outputStream.use { output ->
+                                input.copyTo(output)
+                            }
+                        }
+
+                        expandedApp.value?.let { currentApp ->
+                            currentApp.documentPath = fileName
+                            service.saveAll()
+                        }
+
+                        android.widget.Toast.makeText(context, "upload successful!", android.widget.Toast.LENGTH_SHORT).show()
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                        android.widget.Toast.makeText(context, "upload failed...", android.widget.Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
 
             Application_TrackerTheme {
 
@@ -171,7 +205,8 @@ class MainActivity : ComponentActivity() {
                                                 null,
                                                 null,
                                                 null,
-                                                contact
+                                                contact,
+                                                null
                                             )
 
                                             service.addApplication(app)
@@ -941,6 +976,46 @@ class MainActivity : ComponentActivity() {
                                                             }
                                                             append(" " + contact.phone)
                                                         })
+                                                }
+
+                                                Spacer(modifier = Modifier.height(12.dp))
+
+                                                Row(
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                                                ) {
+
+                                                    if (app.documentPath.isNullOrBlank()) {
+                                                        Button(
+                                                            onClick = {
+                                                                filePickerLauncher.launch("application/pdf")
+                                                            }
+                                                        ) {
+                                                            Text("upload file (PDF)")
+                                                        }
+                                                    } else {
+                                                        Button(
+                                                            onClick = {
+                                                                try {
+                                                                    val file = java.io.File(context.filesDir, app.documentPath)
+                                                                    val authority = "${context.packageName}.fileprovider"
+                                                                    val uri = androidx.core.content.FileProvider.getUriForFile(context, authority, file)
+
+                                                                    val intent = android.content.Intent(android.content.Intent.ACTION_VIEW).apply {
+                                                                        setDataAndType(uri, "application/pdf")
+                                                                        flags = android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION or android.content.Intent.FLAG_ACTIVITY_NEW_TASK
+                                                                    }
+                                                                    context.startActivity(intent)
+                                                                } catch (e: Exception) {
+                                                                    android.widget.Toast.makeText(context, "no PDF-reader installed or file corrupted", android.widget.Toast.LENGTH_SHORT).show()
+                                                                }
+                                                            },
+                                                            colors = ButtonDefaults.buttonColors(containerColor = Color.DarkGray)
+                                                        ) {
+                                                            Text("check send application")
+                                                        }
+                                                    }
                                                 }
                                             }
                                         }
